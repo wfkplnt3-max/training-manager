@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研修スケジュール管理 - AS部門</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;font-size:14px;color:#1a1a1a;background:#f5f5f3}
+.app{display:grid;grid-template-columns:190px 1fr 240px;grid-template-rows:auto 1fr;height:100vh;min-height:640px}
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid #e5e5e0;background:#fff;flex-wrap:wrap}
+.topbar h1{font-size:14px;font-weight:500}
+.topbar-sub{font-size:11px;color:#888}
+.page-tabs{display:flex;gap:2px;background:#f0f0ee;border-radius:7px;padding:2px;margin-left:8px}
+.page-tab{padding:3px 12px;border-radius:5px;border:none;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:#888}
+.page-tab.active{background:#fff;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:500}
+.member-tabs{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;align-items:center}
+.mtab{padding:3px 10px;border-radius:6px;border:1px solid #ddd;background:transparent;cursor:pointer;font-size:11px;color:#666;font-family:inherit}
+.mtab:hover{background:#f0f0f0}
+.mtab.active{background:#EEEDFE;border-color:#AFA9EC;color:#3C3489}
+.add-btn{padding:3px 10px;border-radius:6px;border:1px dashed #ccc;background:transparent;cursor:pointer;font-size:11px;color:#888;font-family:inherit}
+.add-btn:hover{background:#f5f5f5}
+.sidebar-l{padding:12px;border-right:1px solid #e5e5e0;overflow-y:auto;background:#fff;display:flex;flex-direction:column;gap:12px}
+.sec-title{font-size:10px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.minfo-box{padding:10px;background:#f8f8f6;border-radius:8px}
+.mname{font-size:13px;font-weight:500;margin-bottom:3px}
+.mmeta{font-size:11px;color:#888;line-height:1.7}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.stat-card{padding:8px 10px;background:#f8f8f6;border-radius:8px}
+.stat-card.full{grid-column:1/-1}
+.stat-label{font-size:10px;color:#999;margin-bottom:2px}
+.stat-val{font-size:18px;font-weight:500}
+.stat-sub{font-size:10px;color:#aaa}
+.brow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0f0}
+.brow:last-child{border-bottom:none}
+.bbar{height:3px;border-radius:2px;margin-top:3px}
+.cal-area{padding:12px;overflow:auto;background:#fafaf8;display:flex;flex-direction:column}
+.cal-nav{display:flex;align-items:center;gap:7px;margin-bottom:10px;flex-shrink:0}
+.cal-title-text{font-size:13px;font-weight:500}
+.vtoggle{display:flex;gap:3px;margin-left:auto}
+.vbtn{padding:3px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:11px;color:#666;font-family:inherit}
+.vbtn.active{background:#E1F5EE;border-color:#5DCAA5;color:#085041}
+.nbtn{padding:3px 9px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:12px;color:#666;font-family:inherit}
+.nbtn:hover{background:#f0f0f0}
+.wgrid{display:grid;grid-template-columns:44px repeat(5,1fr);border:1px solid #e5e5e0;border-radius:8px;overflow:hidden;background:#fff}
+.whdr{background:#f8f8f6;padding:6px 4px;text-align:center;font-size:10px;font-weight:500;border-bottom:1px solid #e5e5e0;color:#888}
+.whdr.today{color:#185FA5;font-weight:600;background:#E6F1FB}
+.tlabel{font-size:9px;color:#bbb;padding:0 4px;text-align:right;height:40px;display:flex;align-items:flex-start;padding-top:3px;border-right:1px solid #f0f0f0;background:#fafaf8}
+.tcell{height:40px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0;position:relative;transition:background .1s}
+.tcell:last-child{border-right:none}
+.tcell.today-col{background:#EEF6FF}
+.tcell.dov{background:#E1F5EE !important}
+.evchip{position:absolute;left:2px;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:500;cursor:grab;overflow:hidden;z-index:2;display:flex;flex-direction:column}
+.evchip:active{cursor:grabbing;opacity:.75}
+.evchip .en{font-size:9px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.evchip .em{font-size:8px;opacity:.8;line-height:1.3}
+.evchip .edel{position:absolute;top:2px;right:3px;font-size:9px;cursor:pointer;opacity:0;background:none;border:none;color:inherit;padding:0;line-height:1;font-family:inherit}
+.evchip:hover .edel{opacity:.8}
+.multi-badge{position:absolute;top:3px;right:2px;background:#534AB7;color:#fff;border-radius:4px;font-size:8px;font-weight:600;padding:2px 4px;cursor:pointer;z-index:3;line-height:1.4;user-select:none}
+.chip-inp{background:#B5D4F4;color:#0C447C}
+.chip-out{background:#C0DD97;color:#27500A}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e5e5e0;border-radius:8px;overflow:hidden}
+.mdhdr{background:#f8f8f6;text-align:center;font-size:10px;font-weight:500;color:#888;padding:5px}
+.mday{background:#fff;min-height:65px;padding:4px}
+.mday.om{background:#fafaf8;opacity:.4}
+.mday.dov{background:#E1F5EE !important}
+.mday.today-day{background:#EEF6FF}
+.mdnum{font-size:10px;color:#aaa;margin-bottom:2px}
+.mday.today-day .mdnum{background:#185FA5;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.mev{font-size:9px;padding:1px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.sidebar-r{padding:12px;border-left:1px solid #e5e5e0;overflow-y:auto;background:#fff}
+.chip-search{width:100%;padding:5px 9px;border:1px solid #ddd;border-radius:6px;font-size:11px;background:#fafaf8;color:#1a1a1a;margin-bottom:8px;font-family:inherit;outline:none}
+.chip-search:focus{border-color:#AFA9EC;background:#fff}
+.cat-hdr{font-size:10px;font-weight:600;margin:10px 0 5px;padding:3px 7px;border-radius:5px;display:flex;align-items:center;gap:5px}
+.chip-card{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:7px;border:1px solid #ebebeb;margin-bottom:4px;cursor:grab;background:#fff;user-select:none;transition:border-color .1s,box-shadow .1s}
+.chip-card:hover{border-color:#ccc;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.chip-card:active{cursor:grabbing;opacity:.7}
+.cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cinfo{flex:1;min-width:0}
+.cname{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.csub{font-size:9px;color:#aaa}
+.cbadge{font-size:8px;padding:2px 5px;border-radius:4px;flex-shrink:0;font-weight:600}
+.cb-i{background:#E6F1FB;color:#185FA5}
+.cb-o{background:#EAF3DE;color:#3B6D11}
+.trainer-page{display:none;padding:20px;background:#fafaf8;min-height:calc(100vh - 46px);overflow:auto}
+.multi-popup{display:none;position:fixed;z-index:2000;background:#fff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:12px;min-width:210px;max-width:270px}
+.multi-overlay{display:none;position:fixed;inset:0;z-index:1999}
+.popup-ev{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:6px;margin-bottom:3px}
+.popup-ev .pname{font-size:11px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.popup-ev .pmeta{font-size:10px;color:#888;white-space:nowrap;flex-shrink:0}
+.popup-ev .pdel{border:none;background:none;cursor:pointer;color:#ccc;font-size:11px;padding:0;margin-left:3px;flex-shrink:0}
+.popup-ev .pdel:hover{color:#e55}
+.toast{position:fixed;bottom:16px;right:16px;background:#1D9E75;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto}
+.modal.wide{width:420px}
+.modal h2{font-size:15px;font-weight:500;margin-bottom:16px}
+.modal label{font-size:11px;color:#888;display:block;margin-bottom:4px;margin-top:12px}
+.modal input,.modal select,.modal textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none;color:#1a1a1a;background:#fff}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:#AFA9EC}
+.modal-btns{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+.btn-cancel{padding:7px 16px;border-radius:6px;border:1px solid #ddd;background:transparent;cursor:pointer;font-size:12px;font-family:inherit}
+.btn-ok{padding:7px 16px;border-radius:6px;border:none;background:#534AB7;color:#fff;cursor:pointer;font-size:12px;font-family:inherit}
+.btn-ok:hover{background:#3C3489}
+.btn-del{padding:7px 14px;border-radius:6px;border:1px solid #fcc;background:#fff;cursor:pointer;font-size:12px;font-family:inherit;color:#c55}
+.radio-row{display:flex;gap:16px;margin-top:6px}
+.radio-row label{display:flex;align-items:center;gap:5px;margin-top:0;cursor:pointer;font-size:12px;color:#444;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="app" id="mainApp">
+  <div class="topbar">
+    <div style="width:28px;height:28px;border-radius:7px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" rx="1.2" fill="#534AB7"/>
+        <rect x="8" y="1" width="5" height="5" rx="1.2" fill="#534AB7"/>
+        <rect x="1" y="8" width="5" height="5" rx="1.2" fill="#534AB7"/>
+        <rect x="8" y="8" width="5" height="5" rx="1.2" fill="#AFA9EC"/>
+      </svg>
+    </div>
+    <h1>研修スケジュール管理</h1>
+    <span class="topbar-sub">AS部門</span>
+    <div class="page-tabs">
+      <button class="page-tab active" id="tabCal" onclick="setPage('cal')">カレンダー</button>
+      <button class="page-tab" id="tabTrainer" onclick="setPage('trainer')">担当者サマリー</button>
+    </div>
+    <div class="member-tabs" id="memberTabs"></div>
+    <button class="add-btn" onclick="openAddMember()">+ 入社者を追加</button>
+  </div>
+  <div class="sidebar-l">
+    <div><div class="sec-title">入社者情報</div><div class="minfo-box" id="minfo"></div></div>
+    <div><div class="sec-title">集計サマリー</div><div id="statBoxes"></div></div>
+    <div><div class="sec-title">研修別内訳</div><div id="breakdown"></div></div>
+  </div>
+  <div class="cal-area">
+    <div class="cal-nav">
+      <button class="nbtn" id="prevBtn">←</button>
+      <span class="cal-title-text" id="calTitle"></span>
+      <button class="nbtn" id="nextBtn">→</button>
+      <div class="vtoggle">
+        <button class="vbtn active" id="weekBtn" onclick="setView('week')">週</button>
+        <button class="vbtn" id="monthBtn" onclick="setView('month')">月</button>
+      </div>
+    </div>
+    <div id="calBody" style="flex:1;overflow:auto"></div>
+  </div>
+  <div class="sidebar-r">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="sec-title" style="margin-bottom:0">研修チップ</div>
+      <button class="add-btn" onclick="openAddChip()" style="font-size:10px;padding:2px 8px">+ 追加</button>
+    </div>
+    <input class="chip-search" id="chipSearch" placeholder="研修を検索..." oninput="renderChips()">
+    <div id="chipList"></div>
+  </div>
+</div>
+
+<div class="trainer-page" id="trainerPage"><div id="trainerContent"></div></div>
+<div class="toast" id="toast">保存しました</div>
+
+<div class="multi-popup" id="multiPopup">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:11px;font-weight:600;color:#666">この時間の研修</span>
+    <button onclick="closeMultiPopup()" style="border:none;background:none;cursor:pointer;font-size:14px;color:#aaa;padding:0">✕</button>
+  </div>
+  <div id="multiPopupList"></div>
+</div>
+<div class="multi-overlay" id="multiOverlay" onclick="closeMultiPopup()"></div>
+
+<div class="modal-bg" id="memberModal">
+  <div class="modal">
+    <h2 id="memberModalTitle">入社者を追加</h2>
+    <label>氏名</label><input id="m-name" placeholder="例：田中 次郎">
+    <label>部署</label><input id="m-dept" value="AS部門">
+    <label>入社日</label><input id="m-date" type="date">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
+      <button class="btn-del" id="memberDelBtn" onclick="deleteMemberFromModal()" style="display:none">削除</button>
+      <div class="modal-btns" style="margin-top:0">
+        <button class="btn-cancel" onclick="closeMemberModal()">キャンセル</button>
+        <button class="btn-ok" id="memberOkBtn" onclick="confirmMember()">追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="chipModal">
+  <div class="modal wide">
+    <h2 id="chipModalTitle">研修チップを追加</h2>
+    <label>研修名</label><input id="c-name" placeholder="例：標準機能（中級）">
+    <label>カテゴリ（科目）</label>
+    <select id="c-cat">
+      <option>社内勤務</option><option>部内</option><option>スパイダープラス</option>
+      <option>建築パック</option><option>電気パック</option><option>設備パック</option>
+    </select>
+    <label>サブカテゴリ</label><input id="c-sub" placeholder="例：標準機能">
+    <label>デフォルト時間（分）</label><input id="c-mins" type="number" min="15" step="15" value="60">
+    <label>区分</label>
+    <div class="radio-row">
+      <label><input type="radio" name="c-type" value="inp" checked> インプット（IN）</label>
+      <label><input type="radio" name="c-type" value="out"> アウトプット（OUT）</label>
+    </div>
+    <label>デフォルト担当者（任意）</label><input id="c-trainer" placeholder="例：田中">
+    <label>内容メモ（任意）</label>
+    <textarea id="c-memo" rows="2" style="resize:vertical;line-height:1.6" placeholder="研修の詳細・内容..."></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
+      <button class="btn-del" id="chipDelBtn" onclick="deleteChip()" style="display:none">削除</button>
+      <div class="modal-btns" style="margin-top:0">
+        <button class="btn-cancel" onclick="closeChipModal()">キャンセル</button>
+        <button class="btn-ok" id="chipSaveBtn" onclick="confirmChip()">追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="dropModal">
+  <div class="modal" style="width:340px">
+    <h2>研修を配置</h2>
+    <div style="padding:10px 12px;background:#f8f8f6;border-radius:8px;margin-bottom:4px">
+      <div id="dropName" style="font-size:13px;font-weight:500;margin-bottom:3px"></div>
+      <div id="dropMeta" style="font-size:11px;color:#888"></div>
+    </div>
+    <label>担当者名</label><input id="d-trainer" placeholder="例：田中">
+    <label>時間（分）</label><input id="d-mins" type="number" min="15" step="15" value="60">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeDropModal()">キャンセル</button>
+      <button class="btn-ok" onclick="confirmDrop()">配置する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_CHIPS=[
+  {id:'s1',name:'チムスピ',cat:'社内勤務',sub:'勤務',type:'inp',mins:60},
+  {id:'s2',name:'バクラク',cat:'社内勤務',sub:'勤務',type:'inp',mins:60},
+  {id:'s3',name:'スラック',cat:'社内勤務',sub:'勤務',type:'inp',mins:60},
+  {id:'s4',name:'部内戦略',cat:'部内',sub:'部内戦略',type:'inp',mins:60},
+  {id:'s5',name:'部内変遷',cat:'部内',sub:'部内戦略',type:'inp',mins:60},
+  {id:'s6',name:'HS・リテンション解説',cat:'部内',sub:'部内戦略',type:'inp',mins:60},
+  {id:'s7',name:'ステークホルダー整理',cat:'部内',sub:'部内戦略',type:'inp',mins:60},
+  {id:'s8',name:'フォーカス研修',cat:'部内',sub:'提案活動',type:'out',mins:60},
+  {id:'s9',name:'業種別価値・ファクト共有',cat:'部内',sub:'顧客理解',type:'inp',mins:60},
+  {id:'s10',name:'DBの使い方',cat:'部内',sub:'日常業務',type:'inp',mins:60},
+  {id:'s11',name:'キントーンの使い方',cat:'部内',sub:'日常業務',type:'inp',mins:60},
+  {id:'s12',name:'BIの使い方',cat:'部内',sub:'日常業務',type:'inp',mins:60},
+  {id:'s13',name:'AS企業一覧スプシ解説',cat:'部内',sub:'日常業務',type:'inp',mins:60},
+  {id:'p1',name:'プロダクト体系理解（製品把握）',cat:'スパイダープラス',sub:'プロダクト体系',type:'inp',mins:60},
+  {id:'p2',name:'salesサーバー/salesID',cat:'スパイダープラス',sub:'プロダクト体系',type:'inp',mins:60},
+  {id:'p3',name:'サポート受電研修',cat:'スパイダープラス',sub:'サポート',type:'out',mins:60},
+  {id:'p4',name:'S⁺IDログイン方法',cat:'スパイダープラス',sub:'基本操作',type:'inp',mins:60},
+  {id:'p5',name:'標準機能（初級）',cat:'スパイダープラス',sub:'標準機能',type:'out',mins:60},
+  {id:'p6',name:'標準機能（上級）',cat:'スパイダープラス',sub:'標準機能',type:'out',mins:60},
+  {id:'p7',name:'指摘管理機能',cat:'スパイダープラス',sub:'標準機能',type:'out',mins:60},
+  {id:'p8',name:'collabo',cat:'スパイダープラス',sub:'collabo',type:'out',mins:60},
+  {id:'p9',name:'Report',cat:'スパイダープラス',sub:'Report',type:'out',mins:60},
+  {id:'b1',name:'建築：杭施工記録',cat:'建築パック',sub:'建築パック',type:'out',mins:60},
+  {id:'b2',name:'建築：配筋検査',cat:'建築パック',sub:'建築パック',type:'out',mins:60},
+  {id:'b3',name:'建築：仕上検査',cat:'建築パック',sub:'建築パック',type:'out',mins:60},
+  {id:'b4',name:'建築：進捗管理',cat:'建築パック',sub:'建築パック',type:'out',mins:60},
+  {id:'b5',name:'建築：無償ID管理',cat:'建築パック',sub:'建築パック',type:'inp',mins:60},
+  {id:'e1',name:'電気：CAD連携',cat:'電気パック',sub:'電気パック',type:'out',mins:60},
+  {id:'e2',name:'電気：幹線・負荷設備試験',cat:'電気パック',sub:'電気パック',type:'out',mins:60},
+  {id:'e3',name:'電気：コンセント試験',cat:'電気パック',sub:'電気パック',type:'out',mins:60},
+  {id:'e4',name:'電気：照度測定',cat:'電気パック',sub:'電気パック',type:'out',mins:60},
+  {id:'e5',name:'電気：電力量計確認',cat:'電気パック',sub:'電気パック',type:'out',mins:60},
+  {id:'e6',name:'電気：無償ID管理',cat:'電気パック',sub:'電気パック',type:'inp',mins:60},
+  {id:'k1',name:'設備：CAD連携',cat:'設備パック',sub:'設備パック',type:'out',mins:60},
+  {id:'k2',name:'設備：風量測定',cat:'設備パック',sub:'設備パック',type:'out',mins:60},
+  {id:'k3',name:'設備：配管勾配測定',cat:'設備パック',sub:'設備パック',type:'out',mins:60},
+  {id:'k4',name:'設備：温湿度計連携',cat:'設備パック',sub:'設備パック',type:'out',mins:60},
+  {id:'k5',name:'設備：圧力計連携',cat:'設備パック',sub:'設備パック',type:'out',mins:60},
+  {id:'k6',name:'設備：騒音計連携',cat:'設備パック',sub:'設備パック',type:'out',mins:60},
+  {id:'k7',name:'設備：無償ID管理',cat:'設備パック',sub:'設備パック',type:'inp',mins:60},
+];
+const CAT_COLORS={'社内勤務':'#534AB7','部内':'#185FA5','スパイダープラス':'#0F6E56','建築パック':'#BA7517','電気パック':'#993556','設備パック':'#3B6D11'};
+const SK='training_v5';
+let CHIPS=[];
+let state={members:[{id:'m1',name:'山田 太郎',dept:'AS部門',joinDate:'2025-04-01',events:[]},{id:'m2',name:'鈴木 花子',dept:'AS部門',joinDate:'2025-05-12',events:[]}],currentMember:'m1',view:'week',weekOffset:0,monthOffset:0};
+let dragChipId=null,dragEventId=null,pendingDrop=null,editingMemberId=null,editingChipId=null;
+
+function load(){try{const s=localStorage.getItem(SK);if(s)state=JSON.parse(s);const c=localStorage.getItem(SK+'_chips');CHIPS=c?JSON.parse(c):JSON.parse(JSON.stringify(DEFAULT_CHIPS));}catch(e){CHIPS=JSON.parse(JSON.stringify(DEFAULT_CHIPS));}}
+function save(){try{localStorage.setItem(SK,JSON.stringify(state));localStorage.setItem(SK+'_chips',JSON.stringify(CHIPS));showToast();}catch(e){}}
+function saveChipsOnly(){try{localStorage.setItem(SK+'_chips',JSON.stringify(CHIPS));}catch(e){}}
+function showToast(){const t=document.getElementById('toast');t.style.opacity='1';setTimeout(()=>t.style.opacity='0',1400);}
+function getM(){return state.members.find(m=>m.id===state.currentMember);}
+function fmtD(d){return(d.getMonth()+1)+'/'+d.getDate();}
+function fmtFull(d){return d.toISOString().slice(0,10);}
+function todayStr(){return fmtFull(new Date());}
+function getWeekDates(){const now=new Date();now.setDate(now.getDate()+state.weekOffset*7);const dow=now.getDay();const mon=new Date(now);mon.setDate(now.getDate()-(dow===0?6:dow-1));return Array.from({length:5},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});}
+const DAYS=['月','火','水','木','金'];
+const HOURS=Array.from({length:10},(_,i)=>i+9);
+
+function renderTabs(){document.getElementById('memberTabs').innerHTML=state.members.map(m=>`<button class="mtab${m.id===state.currentMember?' active':''}" onclick="selectM('${m.id}')">${m.name.split(' ')[0]}</button>`).join('');}
+function selectM(id){state.currentMember=id;renderAll();}
+
+function renderMinfo(){
+  const m=getM();
+  document.getElementById('minfo').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="mname">${m.name}</div><div class="mmeta">${m.dept}<br>${m.joinDate} 入社</div></div><div style="display:flex;flex-direction:column;gap:4px"><button onclick="openEditMember('${m.id}')" style="padding:2px 8px;border-radius:5px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:10px;font-family:inherit;color:#555">編集</button><button onclick="confirmDeleteMember('${m.id}')" style="padding:2px 8px;border-radius:5px;border:1px solid #fcc;background:#fff;cursor:pointer;font-size:10px;font-family:inherit;color:#c55">削除</button></div></div>`;
+}
+
+function renderStats(){
+  const m=getM();
+  const total=m.events.reduce((s,e)=>s+e.mins,0);
+  const inp=m.events.filter(e=>e.type==='inp').reduce((s,e)=>s+e.mins,0);
+  const out=m.events.filter(e=>e.type==='out').reduce((s,e)=>s+e.mins,0);
+  document.getElementById('statBoxes').innerHTML=`<div class="stat-grid"><div class="stat-card full"><div class="stat-label">合計研修時間</div><div class="stat-val">${Math.round(total/60*10)/10}h</div><div class="stat-sub">${total}分</div></div><div class="stat-card"><div class="stat-label">インプット</div><div class="stat-val" style="font-size:15px">${Math.round(inp/60*10)/10}h</div></div><div class="stat-card"><div class="stat-label">アウトプット</div><div class="stat-val" style="font-size:15px">${Math.round(out/60*10)/10}h</div></div></div>`;
+  const byChip={};
+  m.events.forEach(e=>{if(!byChip[e.chipId])byChip[e.chipId]={name:e.name,mins:0,cat:e.cat};byChip[e.chipId].mins+=e.mins;});
+  const rows=Object.values(byChip).sort((a,b)=>b.mins-a.mins).slice(0,8);
+  const maxM=rows[0]?.mins||1;
+  document.getElementById('breakdown').innerHTML=rows.length===0?'<div style="font-size:11px;color:#aaa;padding:4px 0">まだ配置がありません</div>':rows.map(r=>{const col=CAT_COLORS[r.cat]||'#888';const w=Math.round(r.mins/maxM*100);return`<div class="brow"><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}</div><div class="bbar" style="width:${w}%;background:${col}"></div></div><div style="font-size:10px;color:#aaa;margin-left:6px;flex-shrink:0">${r.mins}分</div></div>`;}).join('');
+}
+
+function renderChips(){
+  const q=(document.getElementById('chipSearch')?.value||'').toLowerCase();
+  const cats=[...new Set(CHIPS.map(c=>c.cat))];
+  document.getElementById('chipList').innerHTML=cats.map(cat=>{
+    const chips=CHIPS.filter(c=>c.cat===cat&&(q===''||c.name.toLowerCase().includes(q)||(c.sub||'').toLowerCase().includes(q)));
+    if(!chips.length)return'';
+    const col=CAT_COLORS[cat]||'#888';
+    return`<div class="cat-hdr" style="background:${col}18;color:${col}"><div style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0"></div>${cat}</div>`+chips.map(c=>`<div class="chip-card" draggable="true" ondragstart="onChipDragStart(event,'${c.id}')" ondragend="onDragEnd()" onclick="openEditChip('${c.id}')"><div class="cdot" style="background:${col}"></div><div class="cinfo"><div class="cname">${c.name}</div><div class="csub">${c.sub||cat} · ${c.mins}分${c.trainer?' · '+c.trainer:''}</div></div><span class="cbadge ${c.type==='inp'?'cb-i':'cb-o'}">${c.type==='inp'?'IN':'OUT'}</span></div>`).join('');
+  }).join('');
+}
+
+function renderWeek(){
+  const dates=getWeekDates();
+  document.getElementById('calTitle').textContent=`${fmtD(dates[0])} – ${fmtD(dates[4])} 週`;
+  const m=getM();const today=todayStr();
+  let html=`<div class="wgrid"><div class="whdr"></div>`;
+  dates.forEach((d,i)=>{const isT=fmtFull(d)===today;html+=`<div class="whdr${isT?' today':''}">${DAYS[i]} ${fmtD(d)}</div>`;});
+  HOURS.forEach(h=>{
+    html+=`<div class="tlabel">${h}:00</div>`;
+    dates.forEach(d=>{
+      const ds=fmtFull(d);const evs=m.events.filter(e=>e.date===ds&&e.hour===h);const isT=ds===today;
+      let inner='';
+      if(evs.length===1){
+        const ev=evs[0];const hp=Math.max(1,Math.round(ev.mins/60))*40-4;
+        inner=`<div class="evchip ${ev.type==='inp'?'chip-inp':'chip-out'}" style="top:2px;right:2px;height:${hp}px" draggable="true" ondragstart="onEvDragStart(event,'${ev.id}')" ondragend="onDragEnd()"><div class="en">${ev.name}</div><div class="em">${ev.trainer?ev.trainer+' · ':''}${ev.mins}分</div><button class="edel" onclick="event.stopPropagation();delEv('${ev.id}')">✕</button></div>`;
+      }else if(evs.length>1){
+        const ev=evs[0];const hp=Math.max(1,Math.round(ev.mins/60))*40-4;const ids=evs.map(e=>e.id).join(',');
+        inner=`<div class="evchip ${ev.type==='inp'?'chip-inp':'chip-out'}" style="top:2px;right:22px;height:${hp}px" draggable="true" ondragstart="onEvDragStart(event,'${ev.id}')" ondragend="onDragEnd()"><div class="en">${ev.name}</div><div class="em">${ev.trainer?ev.trainer+' · ':''}${ev.mins}分</div><button class="edel" onclick="event.stopPropagation();delEv('${ev.id}')">✕</button></div><div class="multi-badge" onclick="openMultiPopup(event,'${ids}')">+${evs.length-1}</div>`;
+      }
+      html+=`<div class="tcell${isT?' today-col':''}" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${ds}',${h})">${inner}</div>`;
+    });
+  });
+  html+='</div>';document.getElementById('calBody').innerHTML=html;
+}
+
+function renderMonth(){
+  const now=new Date();now.setMonth(now.getMonth()+state.monthOffset);
+  const yr=now.getFullYear(),mo=now.getMonth();
+  document.getElementById('calTitle').textContent=`${yr}年${mo+1}月`;
+  const m=getM();const first=new Date(yr,mo,1);const last=new Date(yr,mo+1,0);
+  const sdow=first.getDay()===0?6:first.getDay()-1;const cells=Math.ceil((sdow+last.getDate())/7)*7;const today=todayStr();
+  let html=`<div class="mgrid">`;DAYS.forEach(d=>html+=`<div class="mdhdr">${d}</div>`);
+  for(let i=0;i<cells;i++){
+    const dn=i-sdow+1;const valid=dn>=1&&dn<=last.getDate();
+    const d=valid?new Date(yr,mo,dn):null;const ds=d?fmtFull(d):'';
+    const evs=valid?m.events.filter(e=>e.date===ds):[];const isToday=valid&&ds===today;
+    html+=`<div class="mday${valid?'':' om'}${isToday?' today-day':''}" ondragover="${valid?'onDragOver(event)':''}" ondragleave="${valid?'onDragLeave(event)':''}" ondrop="${valid?`onDrop(event,'${ds}',9)`:''}">
+      ${valid?`<div class="mdnum">${dn}</div>`:''}
+      ${evs.slice(0,2).map(ev=>`<div class="mev ${ev.type==='inp'?'chip-inp':'chip-out'}">${ev.name}</div>`).join('')}
+      ${evs.length>2?`<div style="font-size:9px;color:#aaa;padding-left:2px">+${evs.length-2}件</div>`:''}
+    </div>`;
+  }
+  html+='</div>';document.getElementById('calBody').innerHTML=html;
+}
+
+function renderCal(){if(state.view==='week')renderWeek();else renderMonth();}
+function setView(v){state.view=v;document.getElementById('weekBtn').classList.toggle('active',v==='week');document.getElementById('monthBtn').classList.toggle('active',v==='month');renderCal();}
+document.getElementById('prevBtn').onclick=()=>{if(state.view==='week')state.weekOffset--;else state.monthOffset--;renderCal();};
+document.getElementById('nextBtn').onclick=()=>{if(state.view==='week')state.weekOffset++;else state.monthOffset++;renderCal();};
+
+function onChipDragStart(e,id){dragChipId=id;dragEventId=null;e.dataTransfer.effectAllowed='copy';}
+function onEvDragStart(e,id){dragEventId=id;dragChipId=null;e.dataTransfer.effectAllowed='move';}
+function onDragEnd(){document.querySelectorAll('.dov').forEach(el=>el.classList.remove('dov'));}
+function onDragOver(e){e.preventDefault();e.currentTarget.classList.add('dov');}
+function onDragLeave(e){e.currentTarget.classList.remove('dov');}
+function onDrop(e,date,hour){
+  e.preventDefault();e.currentTarget.classList.remove('dov');const m=getM();
+  if(dragChipId){
+    const chip=CHIPS.find(c=>c.id===dragChipId);if(!chip){dragChipId=null;return;}
+    pendingDrop={date,hour,chip};
+    document.getElementById('dropName').textContent=chip.name;
+    document.getElementById('dropMeta').textContent=(chip.sub||chip.cat)+' · '+chip.mins+'分 · '+(chip.type==='inp'?'インプット':'アウトプット');
+    document.getElementById('d-trainer').value=chip.trainer||'';
+    document.getElementById('d-mins').value=chip.mins;
+    document.getElementById('dropModal').classList.add('open');
+    setTimeout(()=>document.getElementById('d-trainer').focus(),100);
+  }else if(dragEventId){
+    const ev=m.events.find(e=>e.id===dragEventId);if(ev){ev.date=date;ev.hour=hour;}
+    save();renderAll();
+  }
+  dragChipId=null;dragEventId=null;
+}
+function closeDropModal(){document.getElementById('dropModal').classList.remove('open');pendingDrop=null;}
+function confirmDrop(){
+  if(!pendingDrop)return;const{date,hour,chip}=pendingDrop;
+  const trainer=document.getElementById('d-trainer').value.trim();
+  const mins=parseInt(document.getElementById('d-mins').value)||chip.mins;
+  getM().events.push({id:'e'+Date.now(),chipId:chip.id,name:chip.name,cat:chip.cat,sub:chip.sub,type:chip.type,mins,trainer,date,hour});
+  closeDropModal();save();renderAll();
+}
+document.getElementById('dropModal').addEventListener('click',e=>{if(e.target===document.getElementById('dropModal'))closeDropModal();});
+document.getElementById('dropModal').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDrop();});
+function delEv(id){const m=getM();m.events=m.events.filter(e=>e.id!==id);save();renderAll();}
+
+function openMultiPopup(e,ids){
+  e.stopPropagation();const m=getM();
+  const evs=ids.split(',').map(id=>m.events.find(ev=>ev.id===id)).filter(Boolean);
+  document.getElementById('multiPopupList').innerHTML=evs.map(ev=>{
+    const col=CAT_COLORS[ev.cat]||'#888';const bg=ev.type==='inp'?'#E6F1FB':'#EAF3DE';const tc=ev.type==='inp'?'#0C447C':'#27500A';
+    return`<div class="popup-ev" style="background:${bg}"><div style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0"></div><div style="flex:1;min-width:0"><div class="pname" style="color:${tc}">${ev.name}</div><div class="pmeta">${ev.trainer?ev.trainer+' · ':''}${ev.mins}分</div></div><button class="pdel" onclick="delEv('${ev.id}');closeMultiPopup()">✕</button></div>`;
+  }).join('');
+  const popup=document.getElementById('multiPopup');popup.style.display='block';document.getElementById('multiOverlay').style.display='block';
+  const rect=e.target.getBoundingClientRect();let left=rect.right+8;if(left+250>window.innerWidth)left=rect.left-258;
+  popup.style.left=Math.max(4,left)+'px';popup.style.top=Math.min(rect.top,window.innerHeight-220)+'px';
+}
+function closeMultiPopup(){document.getElementById('multiPopup').style.display='none';document.getElementById('multiOverlay').style.display='none';}
+
+function setPage(page){
+  const isTr=page==='trainer';
+  document.getElementById('mainApp').style.display=isTr?'none':'grid';
+  document.getElementById('trainerPage').style.display=isTr?'block':'none';
+  document.getElementById('tabCal').classList.toggle('active',!isTr);
+  document.getElementById('tabTrainer').classList.toggle('active',isTr);
+  if(isTr)renderTrainerSummary();
+}
+
+function renderTrainerSummary(){
+  const map={};
+  state.members.forEach(member=>{member.events.forEach(ev=>{const t=ev.trainer||'（未設定）';if(!map[t])map[t]={name:t,totalMins:0,events:[],members:new Set()};map[t].totalMins+=ev.mins;map[t].members.add(member.name);map[t].events.push({...ev,memberName:member.name});});});
+  const list=Object.values(map).sort((a,b)=>b.totalMins-a.totalMins);
+  if(list.length===0){document.getElementById('trainerContent').innerHTML=`<div style="text-align:center;padding:60px 20px;color:#aaa;font-size:13px">担当者が設定された研修がまだありません<br><br>研修をカレンダーに配置する際に担当者名を入力してください</div>`;return;}
+  const maxM=list[0].totalMins||1;
+  let html=`<div style="max-width:900px;margin:0 auto"><h2 style="font-size:16px;font-weight:500;margin-bottom:20px">担当者サマリー</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">`;
+  list.forEach(tr=>{
+    const h=Math.round(tr.totalMins/60*10)/10;const w=Math.round(tr.totalMins/maxM*100);const ini=tr.name==='（未設定）'?'?':tr.name.slice(0,1);
+    html+=`<div style="background:#fff;border-radius:10px;border:1px solid #e5e5e0;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#534AB7;flex-shrink:0">${ini}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${tr.name}</div><div style="font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${[...tr.members].join('・')} 担当</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:20px;font-weight:500">${h}h</div><div style="font-size:10px;color:#aaa">${tr.totalMins}分</div></div></div><div style="height:4px;background:#f0f0ee;border-radius:2px;margin-bottom:10px"><div style="height:4px;background:#534AB7;border-radius:2px;width:${w}%"></div></div><div style="font-size:10px;color:#999;margin-bottom:6px">担当研修 ${tr.events.length}件</div><div style="display:flex;flex-direction:column;gap:3px;max-height:130px;overflow-y:auto">${tr.events.map(ev=>{const col=CAT_COLORS[ev.cat]||'#888';const bg=ev.type==='inp'?'#E6F1FB':'#EAF3DE';const tc=ev.type==='inp'?'#0C447C':'#27500A';return`<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;background:${bg};border-radius:4px"><div style="width:5px;height:5px;border-radius:50%;background:${col};flex-shrink:0"></div><div style="flex:1;min-width:0;font-size:10px;font-weight:500;color:${tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.name}</div><div style="font-size:10px;color:#aaa;flex-shrink:0">${ev.memberName} · ${ev.mins}分</div></div>`;}).join('')}</div></div>`;
+  });
+  html+=`</div></div>`;document.getElementById('trainerContent').innerHTML=html;
+}
+
+function openAddMember(){
+  editingMemberId=null;document.getElementById('memberModalTitle').textContent='入社者を追加';document.getElementById('memberOkBtn').textContent='追加';document.getElementById('memberDelBtn').style.display='none';
+  document.getElementById('m-name').value='';document.getElementById('m-dept').value='AS部門';document.getElementById('m-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('memberModal').classList.add('open');
+}
+function openEditMember(id){
+  editingMemberId=id;const m=state.members.find(m=>m.id===id);
+  document.getElementById('memberModalTitle').textContent='入社者情報を編集';document.getElementById('memberOkBtn').textContent='保存';document.getElementById('memberDelBtn').style.display='block';
+  document.getElementById('m-name').value=m.name;document.getElementById('m-dept').value=m.dept;document.getElementById('m-date').value=m.joinDate;
+  document.getElementById('memberModal').classList.add('open');
+}
+function closeMemberModal(){document.getElementById('memberModal').classList.remove('open');editingMemberId=null;}
+function confirmMember(){
+  const name=document.getElementById('m-name').value.trim();if(!name){alert('氏名を入力してください');return;}
+  const dept=document.getElementById('m-dept').value.trim()||'AS部門';const joinDate=document.getElementById('m-date').value||new Date().toISOString().slice(0,10);
+  if(editingMemberId){const m=state.members.find(m=>m.id===editingMemberId);if(m){m.name=name;m.dept=dept;m.joinDate=joinDate;}}
+  else{const id='m'+Date.now();state.members.push({id,name,dept,joinDate,events:[]});state.currentMember=id;}
+  closeMemberModal();save();renderAll();
+}
+function deleteMemberFromModal(){if(editingMemberId)confirmDeleteMember(editingMemberId);}
+function confirmDeleteMember(id){
+  if(state.members.length<=1){alert('最低1人は必要です');return;}if(!confirm('この入社者のデータをすべて削除しますか？'))return;
+  state.members=state.members.filter(m=>m.id!==id);state.currentMember=state.members[0].id;
+  closeMemberModal();save();renderAll();
+}
+document.getElementById('memberModal').addEventListener('click',e=>{if(e.target===document.getElementById('memberModal'))closeMemberModal();});
+
+function openAddChip(){
+  editingChipId=null;document.getElementById('chipModalTitle').textContent='研修チップを追加';document.getElementById('chipSaveBtn').textContent='追加';document.getElementById('chipDelBtn').style.display='none';
+  document.getElementById('c-name').value='';document.getElementById('c-cat').value='スパイダープラス';document.getElementById('c-sub').value='';document.getElementById('c-mins').value='60';
+  document.querySelector('input[name="c-type"][value="inp"]').checked=true;document.getElementById('c-trainer').value='';document.getElementById('c-memo').value='';
+  document.getElementById('chipModal').classList.add('open');
+}
+function openEditChip(id){
+  const chip=CHIPS.find(c=>c.id===id);if(!chip)return;editingChipId=id;
+  document.getElementById('chipModalTitle').textContent='研修チップを編集';document.getElementById('chipSaveBtn').textContent='保存';document.getElementById('chipDelBtn').style.display='block';
+  document.getElementById('c-name').value=chip.name;document.getElementById('c-cat').value=chip.cat;document.getElementById('c-sub').value=chip.sub||'';document.getElementById('c-mins').value=chip.mins;
+  document.getElementById('c-trainer').value=chip.trainer||'';document.getElementById('c-memo').value=chip.memo||'';
+  const r=document.querySelector(`input[name="c-type"][value="${chip.type}"]`);if(r)r.checked=true;
+  document.getElementById('chipModal').classList.add('open');
+}
+function closeChipModal(){document.getElementById('chipModal').classList.remove('open');editingChipId=null;}
+function confirmChip(){
+  const name=document.getElementById('c-name').value.trim();if(!name){alert('研修名を入力してください');return;}
+  const cat=document.getElementById('c-cat').value;const sub=document.getElementById('c-sub').value.trim()||cat;
+  const mins=parseInt(document.getElementById('c-mins').value)||60;const typeEl=document.querySelector('input[name="c-type"]:checked');const type=typeEl?typeEl.value:'inp';
+  const trainer=document.getElementById('c-trainer').value.trim();const memo=document.getElementById('c-memo').value.trim();
+  if(editingChipId){const chip=CHIPS.find(c=>c.id===editingChipId);if(chip)Object.assign(chip,{name,cat,sub,mins,type,trainer,memo});}
+  else CHIPS.push({id:'u'+Date.now(),name,cat,sub,mins,type,trainer,memo});
+  saveChipsOnly();closeChipModal();renderChips();
+}
+function deleteChip(){if(!editingChipId)return;if(!confirm('このチップを削除しますか？'))return;CHIPS=CHIPS.filter(c=>c.id!==editingChipId);saveChipsOnly();closeChipModal();renderChips();}
+document.getElementById('chipModal').addEventListener('click',e=>{if(e.target===document.getElementById('chipModal'))closeChipModal();});
+
+function renderAll(){renderTabs();renderMinfo();renderStats();renderChips();renderCal();}
+load();renderAll();
+</script>
+</body>
+</html>
